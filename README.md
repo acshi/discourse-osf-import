@@ -1,0 +1,3 @@
+# Discourse-Osf-Import
+
+This repository should be inserted into discourse/script/import_scripts so that the scripts are available at that location. The relative location is important for how the scripts import the base import scripts, etc...

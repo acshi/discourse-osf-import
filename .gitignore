@@ -1,0 +1,9 @@
+# Ignore everything
+*
+
+# except our files
+!.gitignore
+!README.md
+!osf.rb
+!remove_all_imported.rb
+
