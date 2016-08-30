@@ -74,6 +74,15 @@ class ImportScripts::Osf < ImportScripts::Base
 
         file_in.close
         file_out.close
+
+        # We don't want the general category topics for Files, Projects, and Wikis
+        # So we make them invisible
+        ["Files", "Wikis", "Projects"].each do |n|
+            c = Category.find_by(name: n)
+            t = Topic.find(c.topic_id)
+            t.visible = false
+            t.save
+        end
     end
 
     def import_categories
@@ -116,7 +125,8 @@ class ImportScripts::Osf < ImportScripts::Base
         users.each do |user_info|
             user = find_user_by_import_id(user_info['username'].to_i(36))
             if user == nil
-                raise "It seems that the database has more than one user with email #{user_info['email']}. Please correct this before continuing."
+                puts "It seems that the database has more than one user with email #{user_info['email']}. Be aware that this might cause problems later in the import."
+                next
             end
             raise "is_disabled failed to import, is: #{user.custom_fields['is_disabled']}" unless (user.custom_fields['is_disabled'] == 't') == user_info['is_disabled']
 
