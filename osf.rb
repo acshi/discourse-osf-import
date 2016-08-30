@@ -89,11 +89,21 @@ class ImportScripts::Osf < ImportScripts::Base
         puts "", "importing categories..."
         create_categories([0, 1, 2]) do |i|
             {
-                id: ["files", "wiki", "nodes"][i], # These need to match the .target_type field on the OSF objects
+                # These id's coincide with the OSF types we use,
+                # but since the categories may or may not be imported here,
+                # we don't depend on these id's
+                id: ["files", "wiki", "nodes"][i],
                 name: ["Files", "Wikis", "Projects"][i],
                 color: CATEGORY_COLORS[i]
             }
         end
+
+        # This lookup will work regardless of whether the categories were imported
+        # or whether they already existed
+        @category_id_from_type = {}
+        @category_id_from_type["files"] = Category.find_by(name: "Files").id
+        @category_id_from_type["wiki"] = Category.find_by(name: "Wikis").id
+        @category_id_from_type["nodes"] = Category.find_by(name: "Projects").id
     end
 
     def import_users(users, total_count, offset, file_out)
@@ -209,7 +219,7 @@ class ImportScripts::Osf < ImportScripts::Base
                     raw: converted_content,
                     user_id: -1, #system
                     created_at: Time.parse(post['date_created']),
-                    category: category_id_from_imported_category_id(post['type']),
+                    category: @category_id_from_type[post['type']],
                     custom_fields: {
                         is_deleted: post['is_deleted'],
                     },
@@ -249,6 +259,9 @@ class ImportScripts::Osf < ImportScripts::Base
             raise "Parent guids did not persist, #{parent_guids} != #{post_data['parent_guids']}" unless parent_guids == post_data['parent_guids']
             raise "Project guid did not persist" unless project_guid == post_data['parent_guids'][0]
             raise "Topic guid did not persist" unless topic_guid == post_data['topic_guid']
+            unless ["Files", "Wikis", "Projects"].include? topic.category.name
+                binding.pry
+            end
             raise "Topic category did not persist" unless ["Files", "Wikis", "Projects"].include? topic.category.name
 
             file_out.write({
